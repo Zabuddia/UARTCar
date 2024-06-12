@@ -12,11 +12,9 @@
 #include "btn.h"
 #include "joy.h"
 #include "pin.h"
-
-#define UART_PORT UART_NUM_2
-#define UART_BAUD_RATE 9600
-#define UART_TX_PIN 16
-#define UART_RX_PIN 17
+#include "lcd.h"
+#include "controller.h"
+#include "UART.h"
 
 #define RESOLUTION  1000000
 #define ALARM_COUNT (RESOLUTION/20)
@@ -25,6 +23,8 @@ static const char* TAG = "main";
 
 gptimer_handle_t gptimer;
 bool interrupt_flag;
+
+TFT_t dev;
 
 // Callback function that the timer calls when the alarm is triggered. The parameters are not used and it doesn't matter what it returns
 static bool timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx) {
@@ -59,39 +59,6 @@ void configure_and_start_gptimer() {
     gptimer_start(gptimer);
 }
 
-void uart_init() {
-	uart_config_t uart_config = {
-		.baud_rate = UART_BAUD_RATE,
-		.data_bits = UART_DATA_8_BITS,
-		.parity = UART_PARITY_DISABLE,
-		.stop_bits = UART_STOP_BITS_1,
-		.flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-	};
-	ESP_ERROR_CHECK(uart_param_config(UART_PORT, &uart_config));
-	ESP_ERROR_CHECK(uart_set_pin(UART_PORT, UART_TX_PIN, UART_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-	QueueHandle_t uart_queue;
-	ESP_ERROR_CHECK(uart_driver_install(UART_PORT, 1024 * 2, 1024 * 2, 10, &uart_queue, 0));
-	//ESP_ERROR_CHECK(uart_driver_install(UART_PORT, 1024 * 2, 1024 * 2, 0, NULL, 0));
-}
-
-void uart_send_data(const char* data) {
-    const int len = strlen(data);
-    uart_write_bytes(UART_PORT, data, len);
-}
-
-void uart_read_data() {
-    uint8_t data[128];
-    int length = 0;
-    ESP_ERROR_CHECK(uart_get_buffered_data_len(UART_PORT, (size_t*)&length));
-    if (length > 0) {
-        int len = uart_read_bytes(UART_PORT, data, length, 100);
-        if (len > 0) {
-            data[len] = 0; // Null-terminate whatever we received and treat like a string
-            printf("Received: %s\n", data);
-        }
-    }
-}
-
 void app_main() {
     interrupt_flag = false;
 
@@ -109,15 +76,23 @@ void app_main() {
 	pin_reset(BTN_START);
 	pin_input(BTN_START, true);
 
+	lcdInit(&dev);
+	lcdFrameEnable(&dev);
+	lcdFillScreen(&dev, BLACK);
+	lcdSetFontBackground(&dev, BLACK);
+
     configure_and_start_gptimer();
 
 	uart_init();
 
+	joy_init();
+
     while (1) {
         while (!interrupt_flag) ;
         interrupt_flag = false;
-		if (!pin_get_level(BTN_A)) {
-			uart_send_data("1");
-		}
+		lcdFillScreen(&dev, BLACK);
+		controller_tick_1();
+		controller_tick_2();
+		lcdWriteFrame(&dev);
     }
 }

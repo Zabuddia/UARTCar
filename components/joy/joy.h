@@ -23,6 +23,6 @@ int32_t joy_deinit(void);
 // Therefore, it must be called from a software task context.
 // *dcx: pointer to displacement in x.
 // *dcy: pointer to displacement in y.
-void joy_get_displacement(int32_t *dcx, int32_t *dcy);
+void joy_get_displacement(int *dcx, int *dcy);
 
 #endif /* JOY_H_ */

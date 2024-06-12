@@ -1,1 +1,1 @@
-idf_component_register(SRCS "main.c" INCLUDE_DIRS "." REQUIRES driver joy pin)
+idf_component_register(SRCS "UART.c" "controller.c" "main.c" INCLUDE_DIRS "." REQUIRES driver joy pin lcd)

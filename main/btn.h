@@ -1,6 +1,8 @@
 #ifndef BTN_H_
 #define BTN_H_
 
+#include "lcd.h"
+
 // GPIO pins associated with buttons
 #define BTN_A      32
 #define BTN_B      33
@@ -20,5 +22,7 @@
 	1LLU << BTN_A | \
 	1LLU << BTN_B \
 	)
+
+extern TFT_t dev;
 
 #endif // BTN_H_
